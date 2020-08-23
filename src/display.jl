@@ -1,12 +1,15 @@
 
 function toString(b::SymbolicType)
+    @show b
     b = Basic(b)
     if b.ptr == C_NULL
        error("Trying to print an uninitialized SymEngine Basic variable.")
     end
     a = ccall((:basic_str_julia, libsymengine), Cstring, (Ref{Basic}, ), b)
     string = unsafe_string(a)
+    @show string
     ccall((:basic_str_free, libsymengine), Nothing, (Cstring, ), a)
+    @show string
     return string
 end
 
