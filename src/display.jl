@@ -7,9 +7,9 @@ function toString(b::SymbolicType)
     end
     a = ccall((:basic_str_julia, libsymengine), Cstring, (Ref{Basic}, ), b)
     string = unsafe_string(a)
-    @show string
+    #@show string
     ccall((:basic_str_free, libsymengine), Nothing, (Cstring, ), a)
-    @show string
+    #@show string
     return string
 end
 
