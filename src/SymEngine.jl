@@ -13,6 +13,7 @@ export ascii_art
 export subs, lambdify, N, cse
 export series
 export expand
+export RationalNumber
 
 include("utils.jl")
 const have_mpfr = have_component("mpfr")
