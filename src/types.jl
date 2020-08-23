@@ -24,6 +24,66 @@ mutable struct Basic  <: Number
         return z
     end
 end
+### cosas nuevas
+import Base: +, -, *, /, ^, zero, one, abs, numerator, denominator, show, ==, <, <=, >, >=
+struct RationalNumber{T<:Integer} <: Real
+    a::T
+    b::T
+    function RationalNumber{T}(x::Integer, y::Integer) where T <: Integer
+        x == y == zero(T) && throw(ArgumentError("b is zero."))
+        divby = gcd(x, y)
+        x2, y2 = x / divby, y / divby
+        if y2 < 0
+            return new(-x2, -y2)
+        else
+            return new(x2, y2)
+        end
+    end
+end
+RationalNumber(n::T, d::T) where {T<:Integer} = RationalNumber{T}(n,d)
+RationalNumber(x::Integer, y::Integer) = RationalNumber(promote(x, y)...)
+RationalNumber(x::Integer) = RationalNumber(x, one(x))
+
+numerator(x::RationalNumber) = x.a
+denominator(x::RationalNumber) = x.b
+
+zero(x::Type{RationalNumber{T}}) where {T <: Number} = RationalNumber(zero(T),  one(T))
+one(x::Type{RationalNumber{T}})  where {T <: Number} = RationalNumber(one(T), one(T))
+abs(x::RationalNumber) = RationalNumber(abs(x.a), abs(x.b))
++(x::RationalNumber, y::RationalNumber) = RationalNumber(x.a*y.b + y.a*x.b, x.b*y.b)
+-(x::RationalNumber, y::RationalNumber) = RationalNumber(x.a*y.b - y.a*x.b, x.b*y.b)
+*(x::RationalNumber, y::RationalNumber) = RationalNumber(x.a*y.a, x.b*y.b)
+/(x::RationalNumber, y::RationalNumber) = RationalNumber(x.a*y.b, x.b*y.a)
+^(x::RationalNumber, n::T) where {T <: Integer} = n > zero(n) ? RationalNumber(x.a^n, x.b^n) : RationalNumber(x.b^abs(n), x.a^abs(n))
+^(x::RationalNumber, n::T) where {T <: Real}    = (x.a / x.b)^n
+^(x::Real          , y::RationalNumber) = x^(y.a / y.b)
+
+# comparison operators
+==(x::RationalNumber, y::RationalNumber) = x.a == y.a && x.b == y.b
+==(x::RationalNumber, y::Integer) = x.b == 1 && x.a == y
+==(x::Integer, y::RationalNumber) = y == x
+
+<(x::RationalNumber,  y::RationalNumber) = x.b == y.b ? x.a < y.a  : widemul(x.a, y.b) <  widemul(x.b, y.a)
+<=(x::RationalNumber, y::RationalNumber) = x.b == y.b ? x.a <= y.a : widemul(x.a, y.b) <= widemul(x.b, y.a)
+>(x::RationalNumber,  y::RationalNumber) = x.b == y.b ? x.a > y.a  : widemul(x.a, y.b) >  widemul(x.b, y.a)
+>=(x::RationalNumber, y::RationalNumber) = x.b == y.b ? x.a >= y.a : widemul(x.a, y.b) >= widemul(x.b, y.a)
+
+<(x::Integer, y::RationalNumber) = y.a < widemul(x, y.b)
+<(x::RationalNumber, y::Integer) = y < x
+>(x::Integer, y::RationalNumber) = y.a > widemul(x, y.b)
+>(x::RationalNumber, y::Integer) = y > x
+
+<=(x::Integer, y::RationalNumber) = y.a <= widemul(x, y.b)
+<=(x::RationalNumber, y::Integer) = y <= x
+>=(x::Integer, y::RationalNumber) = y.a >= widemul(x, y.b)
+>=(x::RationalNumber, y::Integer) = y >= x
+
+function show(io::IO, x::RationalNumber)
+    show(io, x.a)
+    print(io, "(.)(.)")
+    show(io, x.b)
+end
+### cosas nuevas
 
 basic_free(b::Basic) = ccall((:basic_free_stack, libsymengine), Nothing, (Ref{Basic}, ), b)
 
@@ -88,6 +148,7 @@ end
 convert(::Type{Basic}, x::Union{Float16, Float32}) = Basic(convert(Cdouble, x))
 convert(::Type{Basic}, x::Integer) = Basic(BigInt(x))
 convert(::Type{Basic}, x::Rational) = Basic(numerator(x)) / Basic(denominator(x))
+convert(::Type{Basic}, x::RationalNumber) = Basic(numerator(x)) / Basic(denominator(x))
 convert(::Type{Basic}, x::Complex) = Basic(real(x)) + Basic(imag(x)) * IM
 
 Basic(x::T) where {T} = convert(Basic, x)
